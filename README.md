@@ -4,3 +4,5 @@
 > Pode usar esse código como quiser, se possível dê os créditos pro pai.
 > Só baixar o arquivo e executar. Ele roda no navegador kk
 > Qualquer coisa manda email: gabrielbahiapro@gmail.com
+Jogue:
+https://lagando.github.io/Teste-seu-Braille/
