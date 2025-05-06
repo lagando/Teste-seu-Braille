@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste seu Braille!</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            transition: background-color 0.5s ease;
+            font-size: 20px; /* Definindo o tamanho da fonte */
+        }
+        .dark {
+            background-color: #333;
+            color: #fff;
+        }
+        #question {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .options {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .option {
+            margin: 0 10px;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 10px 20px;
+            border: 2px solid #333;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .option:hover {
+            background-color: #f0f0f0;
+        }
+        .description {
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: #fff;
+            transition: background-color 0.3s ease;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Teste seu Braille!</h1>
+    <div id="question"></div>
+    <div class="options">
+        <button class="option" onclick="checkAnswer(0)" id="option0"></button>
+        <button class="option" onclick="checkAnswer(1)" id="option1"></button>
+        <button class="option" onclick="checkAnswer(2)" id="option2"></button>
+        <button class="option" onclick="checkAnswer(3)" id="option3"></button>
+    </div>
+    <div id="gameOver" style="display: none;"><br>
+        <div id="score">Fim de jogo. Pontuação: <span id="scoreValue"></span>/10</div>
+        <button class="button" onclick="restartGame()">Jogar Novamente</button>
+    </div>
+    <button class="button" onclick="toggleDarkMode()">Tema Escuro</button>
+    <p style="margin-top: 20px;">Feito por Gabriel Bahia<br/>Email: gabrielbahiapro@gmail.com</p>
+    Regras:<br>
+- São 10 perguntas;<br>
+- São 4 opções de resposta;<br>
+- As respostas podem ser lidas e selecionadas pelo leitor de tela;<br>
+- A partir da segunda pergunta, as perguntas serão lidas pelo leitor de tela;<br>
+- Escolha a resposta correspondente aos pontos em Braille da letra;<br>
+- Você pode apertar f5 para reiniciar o jogo, ou usar o botão da tela final;<br>
+- Ao fim de jogo será mostrado sua pontuação;<br>
+- Boa sorte!
+    <!-- Adicione um elemento de áudio para reproduzir a mensagem de voz -->
+    <audio id="questionVoice"></audio>
+
+    <script>
+        const brailleAlphabet = {
+            'a': { 'braille': '⠁', 'description': 'Pontos 1' },
+            'b': { 'braille': '⠃', 'description': 'Pontos 1 e 2' },
+            'c': { 'braille': '⠉', 'description': 'Pontos 1 e 4' },
+            'd': { 'braille': '⠙', 'description': 'Pontos 1, 4 e 5' },
+            'e': { 'braille': '⠑', 'description': 'Pontos 1 e 5' },
+            'f': { 'braille': '⠋', 'description': 'Pontos 1, 2 e 4' },
+            'g': { 'braille': '⠛', 'description': 'Pontos 1, 2, 4 e 5' },
+            'h': { 'braille': '⠓', 'description': 'Pontos 1, 2 e 5' },
+            'i': { 'braille': '⠊', 'description': 'Pontos 2 e 4' },
+            'j': { 'braille': '⠚', 'description': 'Pontos 2, 4 e 5' },
+            'k': { 'braille': '⠅', 'description': 'Pontos 1 e 3' },
+            'l': { 'braille': '⠇', 'description': 'Pontos 1, 2 e 3' },
+            'm': { 'braille': '⠍', 'description': 'Pontos 1, 3 e 4' },
+            'n': { 'braille': '⠝', 'description': 'Pontos 1, 3, 4 e 5' },
+            'o': { 'braille': '⠕', 'description': 'Pontos 1, 3 e 5' },
+            'p': { 'braille': '⠏', 'description': 'Pontos 1, 2, 3 e 4' },
+            'q': { 'braille': '⠟', 'description': 'Pontos 1, 2, 3, 4 e 5' },
+            'r': { 'braille': '⠗', 'description': 'Pontos 1, 2, 3 e 5' },
+            's': { 'braille': '⠎', 'description': 'Pontos 2, 3 e 4' },
+            't': { 'braille': '⠞', 'description': 'Pontos 2, 3, 4 e 5' },
+            'u': { 'braille': '⠥', 'description': 'Pontos 1, 3 e 6' },
+            'v': { 'braille': '⠧', 'description': 'Pontos 1, 2, 3 e 6' },
+            'w': { 'braille': '⠺', 'description': 'Pontos 2, 4, 5 e 6' },
+            'x': { 'braille': '⠭', 'description': 'Pontos 1, 3, 4 e 6' },
+            'y': { 'braille': '⠽', 'description': 'Pontos 1, 3, 4, 5 e 6' },
+            'z': { 'braille': '⠵', 'description': 'Pontos 1, 3, 5 e 6' }
+        };
+
+        let questions = [];
+        const totalQuestions = 10;
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let gameActive = true; // Estado do jogo ativo
+        const questionElement = document.getElementById('question');
+        const optionElements = document.querySelectorAll('.option');
+        const gameOverElement = document.getElementById('gameOver');
+        const scoreElement = document.getElementById('score');
+        const scoreValueElement = document.getElementById('scoreValue');
+        const questionVoiceElement = document.getElementById('questionVoice');
+        const defaultVoice = speechSynthesis.getVoices()[0];
+
+        function generateQuestions() {
+            const letters = Object.keys(brailleAlphabet);
+            for (let i = 0; i < totalQuestions; i++) {
+                const letter = letters[Math.floor(Math.random() * letters.length)];
+                const correctOptionIndex = Math.floor(Math.random() * 4);
+                const options = generateOptions(letter, correctOptionIndex);
+                questions.push({ letter: letter, correctOptionIndex: correctOptionIndex, options: options });
+            }
+        }
+
+        function generateOptions(correctLetter, correctOptionIndex) {
+            const options = [];
+            const letters = Object.keys(brailleAlphabet);
+            for (let i = 0; i < 4; i++) {
+                if (i === correctOptionIndex) {
+                    options.push({ 'braille': brailleAlphabet[correctLetter].braille, 'description': getDescription(correctLetter) });
+                } else {
+                    let randomLetter = letters[Math.floor(Math.random() * letters.length)];
+                    while (randomLetter === correctLetter || options.some(option => option.braille === brailleAlphabet[randomLetter].braille)) {
+                        randomLetter = letters[Math.floor(Math.random() * letters.length)];
+                    }
+                    options.push({ 'braille': brailleAlphabet[randomLetter].braille, 'description': getDescription(randomLetter) });
+                }
+            }
+            return options;
+        }
+
+        function getDescription(letter) {
+            return brailleAlphabet[letter].description;
+        }
+
+        function displayQuestion() {
+            const currentQuestion = questions[currentQuestionIndex];
+            const questionText = `Qual é a letra "${currentQuestion.letter.toUpperCase()}" em Braille?`;
+            questionElement.textContent = questionText;
+            speakQuestion(questionText);
+
+            currentQuestion.options.forEach((option, index) => {
+                optionElements[index].textContent = option.braille;
+                optionElements[index].setAttribute('title', option.description);
+                optionElements[index].setAttribute('aria-label', `Opção ${index + 1}: ${option.braille}, ${option.description}`);
+            });
+        }
+
+        function speakQuestion(message) {
+            const msg = new SpeechSynthesisUtterance();
+            msg.text = message;
+            msg.voice = defaultVoice;
+            msg.rate = 1.9; // Ajuste a velocidade de fala aqui
+            speechSynthesis.speak(msg);
+        }
+
+        function checkAnswer(selectedIndex) {
+            if (!gameActive) return; // Não faz nada se o jogo não estiver ativo
+            const currentQuestion = questions[currentQuestionIndex];
+            if (selectedIndex === currentQuestion.correctOptionIndex) {
+                alert('Resposta correta!');
+                score++;
+            } else {
+                alert('Resposta incorreta.');
+            }
+            currentQuestionIndex++;
+            if (currentQuestionIndex < totalQuestions) {
+                displayQuestion();
+            } else {
+                endGame();
+            }
+        }
+
+        function endGame() {
+            speakMessage('Fim de jogo. Sua pontuação foi ' + score + ' de 10.');
+            showScore();
+        }
+
+        function speakMessage(message) {
+            const msg = new SpeechSynthesisUtterance();
+            msg.text = message;
+            speechSynthesis.speak(msg);
+        }
+
+        function showScore() {
+            scoreValueElement.textContent = score;
+            gameOverElement.style.display = 'block';
+            gameActive = false; // Desativa o estado do jogo
+        }
+
+        function restartGame() {
+            questions = [];
+            currentQuestionIndex = 0;
+            score = 0;
+            gameOverElement.style.display = 'none';
+            gameActive = true; // Ativa o estado do jogo novamente
+            generateQuestions();
+            displayQuestion();
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark');
+        }
+
+        generateQuestions();
+        displayQuestion();
+
+        // Adicionando a classe dark ao corpo para iniciar com o tema escuro
+        document.body.classList.add('dark');
+    </script>
+</body>
+</html>
